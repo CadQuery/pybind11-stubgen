@@ -1,5 +1,3 @@
-from typing import Optional, Callable, Iterator, Iterable, List, Set, Mapping, Tuple, Any
-from functools import cmp_to_key
 from parser import expr
 import warnings
 import importlib
@@ -788,29 +786,20 @@ class ModuleStubsGenerator(StubsGenerator):
             if self.write_setup_py:
                 with open("setup.py", "w") as setuppy:
                     setuppy.write("""from setuptools import setup
-import os
-
-
-def find_stubs(package):
-    stubs = []
-    for root, dirs, files in os.walk(package):
-        for file in files:
-            path = os.path.join(root, file).replace(package + os.sep, '', 1)
-            stubs.append(path)
-    return dict(package=stubs)
-
 
 setup(
     name='{package_name}-stubs',
     maintainer="{package_name} Developers",
-    maintainer_email="example@python.org",
-    description="PEP 561 type stubs for {package_name}",
+    description="PEP 561 type stubs for OCP",
     version='1.0',
     packages=['{package_name}-stubs'],
     # PEP 561 requires these
-    install_requires=['{package_name}'],
-    package_data=find_stubs('{package_name}-stubs'),
+    install_requires=[],
+    include_package_data = True, #see MANIFEST
 )""".format(package_name=self.short_name))
+                    
+                with open("MANIFEST.in", "w") as manifest:
+                    manifest.write(f"recursive-include {self.short_name}-stubs  *.pyi")
 
 
 def recursive_mkdir_walker(subdirs, callback):  # type: (List[str], Callable) -> None
