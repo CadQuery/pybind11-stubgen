@@ -66,10 +66,15 @@ def sanitize_args(args):
     python_type.setParseAction(toStr)
     
     python_value = real|integer|quotedString|unicodeString|boolLiteral|noneLiteral|python_type
-    python_default_value = python_value ^ (Suppress('<') + python_type + Suppress('object at') + Suppress(addr) + Suppress('>'))
-    
+    python_default_value = ( 
+        python_value ^ 
+        (Suppress('<') + python_type + Suppress('object at') + Suppress(addr) + Suppress('>')) ^
+        (Suppress('<') + python_type + Suppress(':') + Suppress(integer) + Suppress('>'))
+    )
+
+
     cpp_ns = name + Literal('::')
-    cpp_type = Optional('unsigned')+ZeroOrMore(cpp_ns)+name
+    cpp_type = Optional('unsigned') +  ( Literal('long')  ^ (Optional('long') + ZeroOrMore(cpp_ns) + name) ) + Optional('*') 
     
     cpp_template  = Forward()
     cpp_template << cpp_type + Optional(Group(Suppress('<')+(cpp_template^integer)+ZeroOrMore(Suppress(',')+(cpp_template^integer)) + Suppress('>'))) + Optional('const') + Optional('*') + Optional('&')
