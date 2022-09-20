@@ -15,98 +15,98 @@ _visited_objects = []
 
 
 def sanitize_type(t):
-    
+
     try:
         expr(t)
     except SyntaxError:
         t = "Any"
-        
+
     return t
 
 def sanitize_name(t):
-    
+
     try:
         expr(t)
     except SyntaxError:
         t += "_"
-        
+
     return t
 
 def sanitize_args(args):
-    
+
     from pyparsing import (Suppress,Word,srange,ZeroOrMore,Literal,Optional,Group,
                            Forward,Regex,oneOf,quotedString,unicodeString, delimitedList,
                            OneOrMore)
 
 
     def toAny(s, loc, tokens):
-        
+
         return 'Any'
-    
+
     def toStr(s, loc, tokens):
-        
+
         return ''.join(tokens)
-    
+
     comma = Suppress(',')
-    
+
     integer = Regex(r"[+-]?\d+")
     real = Regex(r"[+-]?\d+[.]?\d*([Ee][+-]?[0-9]+)?")
     boolLiteral = oneOf("True False")
     noneLiteral = Literal("None")
-    
-    addr = Regex(r"0x[a-f0-9]+")
-    
+
+    addr = Regex(r"0x[A-Fa-f0-9]+")
+
     name = Word(srange("[a-zA-Z_]"), srange("[a-zA-Z0-9_]"))
-    
+
     python_name = name + ZeroOrMore(Literal('.')+name)
-        
+
     python_type = Forward()
     python_type << python_name+Optional(Literal('[') + delimitedList(python_type) +Literal(']'))
-    
+
     python_type.setParseAction(toStr)
-    
+
     python_value = real|integer|quotedString|unicodeString|boolLiteral|noneLiteral|python_type
-    python_default_value = ( 
-        python_value ^ 
+    python_default_value = (
+        python_value ^
         (Suppress('<') + python_type + Suppress('object at') + Suppress(addr) + Suppress('>')) ^
         (Suppress('<') + python_type + Suppress(':') + Suppress(integer) + Suppress('>'))
     )
 
 
     cpp_ns = name + Literal('::')
-    cpp_type = Optional('unsigned') +  ( Literal('long')  ^ (Optional('long') + ZeroOrMore(cpp_ns) + name) ) + Optional('*') 
-    
-    cpp_template  = Forward()
-    cpp_template << cpp_type + Optional(Group(Suppress('<')+(cpp_template^integer)+ZeroOrMore(Suppress(',')+(cpp_template^integer)) + Suppress('>'))) + Optional('const') + Optional('*') + Optional('&')
+    cpp_type = Optional('unsigned') +  ( Literal('long')  ^ (Optional('long') + ZeroOrMore(cpp_ns) + name) ) + Optional('*')
 
-    cpp_func = cpp_template ^ (cpp_template + Suppress('(') + Optional(cpp_template) + ZeroOrMore(Suppress(',')+cpp_template)+Suppress(')') )
+    cpp_template  = Forward()
+    cpp_template << cpp_type + Optional(Group(Suppress('<')+((cpp_template+Optional(name))^integer)+ZeroOrMore(Suppress(',')+((cpp_template+Optional(name))^integer)) + Suppress('>'))) + Optional('const') + Optional('*') + Optional('&')
+
+    cpp_func = cpp_template ^ (cpp_template + Optional(name) +Suppress('(') + Optional(cpp_template) + Optional(name) + ZeroOrMore(Suppress(',')+cpp_template+Optional(name))+Suppress(')') )
     cpp_func.setParseAction(toAny)
-    
+
     arg_name = Optional(OneOrMore(name), default="arg").setResultsName('name')
     arg_name.setParseAction(toStr)
-    
+
     arg = Group(
-           arg_name + 
-           Suppress(':') + 
+           arg_name +
+           Suppress(':') +
            (python_type ^ cpp_func).setResultsName('type') +
            Optional(Suppress('=') + python_default_value).setResultsName('default')
     ).setResultsName('arg',True)
-    
+
     self = Literal('self').setResultsName('self')
     signature = (Optional(self) ^ Optional(arg)) + ZeroOrMore(comma+arg)
-    
+
     rv = []
-    
+
     for i,el in enumerate(signature.parseString(args,True)):
-        
+
         if el=='self':
             rv.append(el)
             continue
-        
+
         name,t,default = el['name'], el['type'][0],el.get('default')
-        
+
         rv.append(f"{sanitize_name(name) if name != 'arg' else 'arg'+str(i)} : {t}"+(f"={default[0]}" if default else ""))
-        
+
     return ','.join(rv)
 
 
@@ -170,9 +170,9 @@ class FunctionSignature(object):
             expr(rv)
         except SyntaxError:
             rv = "Any"
-            
+
         return rv
-        
+
     def get_all_involved_types(self):
         types = []
         for t in [self.rtype] + self.split_arguments():
@@ -472,7 +472,7 @@ class ClassMemberStubsGenerator(FreeFunctionStubsGenerator):
                 args = ",".join(["self"] + sig.split_arguments()[1:])
             if len(self.signatures) > 1:
                 result.append("@overload")
-            
+
             result.append("def {name}({args}) -> {rtype}: {ellipsis}".format(
                 name=sig.name,
                 args=sanitize_args(args),
@@ -802,7 +802,7 @@ setup(
     install_requires=[],
     include_package_data = True, #see MANIFEST
 )""".format(package_name=self.short_name))
-                    
+
                 with open("MANIFEST.in", "w") as manifest:
                     manifest.write(f"recursive-include {self.short_name}-stubs  *.pyi")
 
