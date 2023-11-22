@@ -1,4 +1,4 @@
-from parser import expr
+from ast import parse as expr
 import warnings
 import importlib
 import itertools
