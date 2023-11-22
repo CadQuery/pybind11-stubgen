@@ -9,6 +9,7 @@ setup(
     version="0.3.1.post1",
     long_description=open("README.rst").read(),
     license="BSD",
+    install_requires=['pyparsing'],
     entry_points={'console_scripts': 'pybind11-stubgen = pybind11_stubgen.__init__:main'},
     packages=['pybind11_stubgen']
 )
