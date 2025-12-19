@@ -47,7 +47,7 @@ close_bracket = Literal(">")
 cpp_expr = Forward()
 cpp_expr << cpp_type + Optional(
     open_bracket + delimitedList(cpp_expr) + close_bracket
-) + Optional(Literal("const")) + Optional(Literal("*")) + Optional(Literal("&"))
+) + Literal("const")[0,1] + Literal("*")[0,1] + Literal("&")[0,1] + name[0,1]
 
 cpp_fun = cpp_expr + name[0,1] + Literal("(") + delimitedList(cpp_expr + name[0,1]) + Literal(")")
 
