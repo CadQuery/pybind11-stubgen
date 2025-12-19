@@ -33,21 +33,23 @@ from pyparsing import (
     pyparsing_common,
 )
 
-cpp_name = (
+name = Word(alphanums + "_") 
+
+cpp_type = (
     (Literal("long ") | Literal("unsigned "))[0, 1]
     + Literal("long")[0, 1]
-    + Word(alphanums + "_")[0, 1]
-    + ZeroOrMore(Literal("::") + Word(alphanums + "_"))
+    + name[0, 1]
+    + ZeroOrMore(Literal("::") + name)
 )
 open_bracket = Literal("<")
 close_bracket = Literal(">")
 
 cpp_expr = Forward()
-cpp_expr << cpp_name + Optional(
+cpp_expr << cpp_type + Optional(
     open_bracket + delimitedList(cpp_expr) + close_bracket
 ) + Optional(Literal("const")) + Optional(Literal("*")) + Optional(Literal("&"))
 
-cpp_fun = cpp_expr + Literal("(") + delimitedList(cpp_expr) + Literal(")")
+cpp_fun = cpp_expr + name[0,1] + Literal("(") + delimitedList(cpp_expr + name[0,1]) + Literal(")")
 
 # old grammer
 from pyparsing import (
