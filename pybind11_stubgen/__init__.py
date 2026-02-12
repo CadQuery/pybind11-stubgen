@@ -397,7 +397,7 @@ class StubsGenerator(object):
                 sig.args = StubsGenerator.apply_classname_replacements(sig.args)
                 sig.rtype = StubsGenerator.apply_classname_replacements(sig.rtype)
 
-            return list(set(signatures))
+            return list({sig: None for sig in signatures}.keys()) # ordered set workaround
         except AttributeError:
             return []
 
